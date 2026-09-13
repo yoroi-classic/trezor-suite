@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const DEPENDENCY_FIELDS = [
     'dependencies',
@@ -69,7 +70,7 @@ export const findCardanoCslViolations = root => {
     return violations;
 };
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
     const violations = findCardanoCslViolations(process.cwd());
     if (violations.length > 0) {
         console.error(violations.join('\n'));
