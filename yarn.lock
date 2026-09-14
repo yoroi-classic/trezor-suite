@@ -3863,9 +3863,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fivebinaries/coin-selection@https://github.com/yoroi-classic/coin-selection.git#commit=f2b4de4d8651dac49d62b38b801c4f9b61ce1cc3":
+"@fivebinaries/coin-selection@https://github.com/yoroi-classic/coin-selection.git#commit=36aa77ec31c9be45a058a323646ba410f2079583":
   version: 3.0.0
-  resolution: "@fivebinaries/coin-selection@https://github.com/yoroi-classic/coin-selection.git#commit=f2b4de4d8651dac49d62b38b801c4f9b61ce1cc3"
+  resolution: "@fivebinaries/coin-selection@https://github.com/yoroi-classic/coin-selection.git#commit=36aa77ec31c9be45a058a323646ba410f2079583"
   dependencies:
     "@dcspark/cardano-multiplatform-lib-browser": "npm:6.2.0"
     "@dcspark/cardano-multiplatform-lib-nodejs": "npm:6.2.0"
@@ -16477,7 +16477,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@trezor/network-cardano@workspace:networks/cardano/network-cardano"
   dependencies:
-    "@fivebinaries/coin-selection": "https://github.com/yoroi-classic/coin-selection.git#commit=f2b4de4d8651dac49d62b38b801c4f9b61ce1cc3"
+    "@fivebinaries/coin-selection": "https://github.com/yoroi-classic/coin-selection.git#commit=36aa77ec31c9be45a058a323646ba410f2079583"
     cbor: "npm:^10.0.12"
   languageName: unknown
   linkType: soft
