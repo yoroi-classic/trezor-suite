@@ -146,7 +146,8 @@ const config: webpack.Configuration = {
         mainFields: ['module', 'main'],
         extensions: ['.ts', '.js'],
         alias: {
-            '@emurgo/cardano-serialization-lib-nodejs': '@emurgo/cardano-serialization-lib-browser',
+            '@dcspark/cardano-multiplatform-lib-nodejs':
+                '@dcspark/cardano-multiplatform-lib-browser',
             '@trezor/connect$': '@trezor/connect/src/index', // alternative for "module": "src/index" in connect's package.json
         },
     },
@@ -204,13 +205,13 @@ const config: webpack.Configuration = {
             : []),
     ],
 
-    // We are using WASM package - it's much faster (https://github.com/Emurgo/cardano-serialization-lib)
+    // We are using the CML WASM package for Cardano transaction handling.
     // This option makes it possible
-    // Unfortunately Cardano Serialization Lib triggers webpack warning:
+    // Unfortunately the CML package triggers a webpack warning:
     // "Critical dependency: the request of a dependency is an expression" due to require in generated wasm module
-    // https://github.com/Emurgo/cardano-serialization-lib/issues/119
+    // https://github.com/dcSpark/cardano-multiplatform-lib/issues/119
     experiments: { asyncWebAssembly: true },
-    ignoreWarnings: [{ module: /cardano-serialization-lib-browser/ }],
+    ignoreWarnings: [{ module: /cardano-multiplatform-lib-browser/ }],
 };
 
 export default config;
