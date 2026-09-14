@@ -45,7 +45,7 @@
         "build:lib": "yarn g:rimraf ./lib && yarn g:tsc --build tsconfig.lib.json && ../../../scripts/publish/replace-imports.sh ./lib"
     },
     "dependencies": {
-        "@fivebinaries/coin-selection": "https://github.com/yoroi-classic/coin-selection.git#commit=dc32a1275ad30c2fd7557135fbc8cd49a6d90347",
+        "@fivebinaries/coin-selection": "https://github.com/yoroi-classic/coin-selection.git#commit=f2b4de4d8651dac49d62b38b801c4f9b61ce1cc3",
         "cbor": "^10.0.12"
     }
 }
