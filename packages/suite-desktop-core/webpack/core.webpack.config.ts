@@ -209,7 +209,7 @@ const config: webpack.Configuration = {
     // This option makes it possible
     // Unfortunately the CML package triggers a webpack warning:
     // "Critical dependency: the request of a dependency is an expression" due to require in generated wasm module
-    // https://github.com/dcSpark/cardano-multiplatform-lib/issues/119
+    // https://github.com/Emurgo/cardano-serialization-lib/issues/119
     experiments: { asyncWebAssembly: true },
     ignoreWarnings: [{ module: /cardano-multiplatform-lib-browser/ }],
 };

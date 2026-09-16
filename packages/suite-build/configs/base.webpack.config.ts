@@ -245,7 +245,7 @@ const config: webpack.Configuration = {
     ignoreWarnings: [
         // Unfortunately the CML package triggers a webpack warning:
         // "Critical dependency: the request of a dependency is an expression" due to require in generated wasm module
-        // https://github.com/dcSpark/cardano-multiplatform-lib/issues/119
+        // https://github.com/Emurgo/cardano-serialization-lib/issues/119
         { module: /cardano-multiplatform-lib-browser/ },
         // checkAuthenticityProof (see comment on how subtle is used there), should be safe to suppress this message
         warning =>
