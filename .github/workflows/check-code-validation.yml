@@ -167,6 +167,8 @@ jobs:
         uses: ./.github/actions/minimal-yarn-install
       - name: Verify Requirements
         run: yarn requirements:verify
+      - name: Check Cardano dependencies
+        run: yarn check:cardano-csl && yarn node --test scripts/check-cardano-csl.test.mjs
       - name: Check Files for Correct Formatting
         run: yarn format:verify
       - name: Verify TS Project References

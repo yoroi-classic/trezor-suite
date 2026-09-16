@@ -239,14 +239,14 @@ const config: webpack.Configuration = {
               ]
             : []),
     ],
-    // We are using WASM package - it's much faster (https://github.com/Emurgo/cardano-serialization-lib)
+    // We are using the CML WASM package for Cardano transaction handling.
     // This option makes it possible
     experiments: { asyncWebAssembly: true },
     ignoreWarnings: [
-        // Unfortunately Cardano Serialization Lib triggers webpack warning:
+        // Unfortunately the CML package triggers a webpack warning:
         // "Critical dependency: the request of a dependency is an expression" due to require in generated wasm module
         // https://github.com/Emurgo/cardano-serialization-lib/issues/119
-        { module: /cardano-serialization-lib-browser/ },
+        { module: /cardano-multiplatform-lib-browser/ },
         // checkAuthenticityProof (see comment on how subtle is used there), should be safe to suppress this message
         warning =>
             warning.message.includes(
