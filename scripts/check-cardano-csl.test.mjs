@@ -36,6 +36,18 @@ test('rejects direct CSL dependencies in package manifests', () => {
     );
 });
 
+test('rejects npm aliases to CSL packages in package manifests', () => {
+    assert.deepEqual(
+        findManifestViolations(
+            { dependencies: { csl: 'npm:@emurgo/cardano-serialization-lib-browser@14.1.2' } },
+            'networks/cardano/example/package.json',
+        ),
+        [
+            'networks/cardano/example/package.json: dependencies contains csl aliasing npm:@emurgo/cardano-serialization-lib-browser@14.1.2',
+        ],
+    );
+});
+
 test('rejects CSL entries in the lockfile', () => {
     assert.deepEqual(
         findLockfileViolations(
@@ -52,6 +64,17 @@ test('rejects patched CSL lockfile descriptors', () => {
         ),
         [
             'yarn.lock: forbidden CSL entry "@emurgo/cardano-serialization-lib-browser@patch:@emurgo/cardano-serialization-lib-browser@npm%3A14.1.2#./patches/csl.patch":',
+        ],
+    );
+});
+
+test('rejects npm alias descriptors targeting CSL packages', () => {
+    assert.deepEqual(
+        findLockfileViolations(
+            '"csl@npm:@emurgo/cardano-serialization-lib-browser@14.1.2":\n',
+        ),
+        [
+            'yarn.lock: forbidden CSL entry "csl@npm:@emurgo/cardano-serialization-lib-browser@14.1.2":',
         ],
     );
 });

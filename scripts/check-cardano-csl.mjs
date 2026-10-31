@@ -36,9 +36,20 @@ const collectPackageJsonPaths = (root, directory) => {
 
 export const findManifestViolations = (manifest, manifestPath) =>
     DEPENDENCY_FIELDS.flatMap(field =>
-        Object.keys(manifest[field] ?? {})
-            .filter(dependency => CSL_PACKAGE_PATTERN.test(dependency))
-            .map(dependency => `${manifestPath}: ${field} contains ${dependency}`),
+        Object.entries(manifest[field] ?? {})
+            .filter(
+                ([dependency, specifier]) =>
+                    CSL_PACKAGE_PATTERN.test(dependency) ||
+                    (typeof specifier === 'string' &&
+                        /@emurgo\/cardano-serialization-lib-(?:browser|nodejs)(?=@)/.test(
+                            specifier,
+                        )),
+            )
+            .map(([dependency, specifier]) =>
+                CSL_PACKAGE_PATTERN.test(dependency)
+                    ? `${manifestPath}: ${field} contains ${dependency}`
+                    : `${manifestPath}: ${field} contains ${dependency} aliasing ${specifier}`,
+            ),
     );
 
 export const findLockfileViolations = lockfile =>
@@ -50,7 +61,7 @@ export const findLockfileViolations = lockfile =>
             return descriptor
                 .split(',')
                 .some(entry =>
-                    /^@emurgo\/cardano-serialization-lib-(?:browser|nodejs)@/.test(
+                    /@emurgo\/cardano-serialization-lib-(?:browser|nodejs)(?=@)/.test(
                         entry.trim(),
                     ),
                 );
