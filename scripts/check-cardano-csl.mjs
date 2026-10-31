@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const DEPENDENCY_FIELDS = [
@@ -8,7 +8,8 @@ const DEPENDENCY_FIELDS = [
     'optionalDependencies',
     'peerDependencies',
 ];
-const CSL_PACKAGE_PATTERN = /^@emurgo\/cardano-serialization-lib-(?:browser|nodejs)$/;
+const CSL_PACKAGE_PATTERN = /^@emurgo\/cardano-serialization-lib-[a-z0-9-]+$/;
+const CSL_PACKAGE_REFERENCE_PATTERN = /@emurgo\/cardano-serialization-lib-[a-z0-9-]+(?=@)/;
 const CARDANO_ROOTS = [
     'networks/cardano',
     'packages/connect',
@@ -27,46 +28,53 @@ const collectPackageJsonPaths = (root, directory) => {
                 paths.push(...collectPackageJsonPaths(root, entryPath));
             }
         } else if (entry.name === 'package.json') {
-            paths.push(relative(root, entryPath));
+            paths.push(relative(root, entryPath).split(sep).join('/'));
         }
     }
+
     return paths;
 };
 
 export const findManifestViolations = (manifest, manifestPath) =>
     DEPENDENCY_FIELDS.flatMap(field =>
-        Object.keys(manifest[field] ?? {})
-            .filter(dependency => CSL_PACKAGE_PATTERN.test(dependency))
-            .map(dependency => `${manifestPath}: ${field} contains ${dependency}`),
+        Object.entries(manifest[field] ?? {})
+            .filter(
+                ([dependency, specifier]) =>
+                    CSL_PACKAGE_PATTERN.test(dependency) ||
+                    (typeof specifier === 'string' &&
+                        CSL_PACKAGE_REFERENCE_PATTERN.test(specifier)),
+            )
+            .map(([dependency, specifier]) =>
+                CSL_PACKAGE_PATTERN.test(dependency)
+                    ? `${manifestPath}: ${field} contains ${dependency}`
+                    : `${manifestPath}: ${field} contains ${dependency} aliasing ${specifier}`,
+            ),
     );
 
 export const findLockfileViolations = lockfile =>
     lockfile
         .split('\n')
-        .filter(line =>
-            CSL_PACKAGE_PATTERN.test(
-                line
-                    .trim()
-                    .replace(/^"|":$/g, '')
-                    .split('@npm:')[0],
-            ),
-        )
+        .filter(line => {
+            const descriptor = line.trim().replace(/^"|":$/g, '');
+
+            return descriptor
+                .split(',')
+                .some(entry => CSL_PACKAGE_REFERENCE_PATTERN.test(entry.trim()));
+        })
         .map(line => `yarn.lock: forbidden CSL entry ${line.trim()}`);
 
 export const findCardanoCslViolations = root => {
     const violations = [];
     for (const relativeRoot of CARDANO_ROOTS) {
         const directory = join(root, relativeRoot);
-        try {
-            for (const manifestPath of collectPackageJsonPaths(root, directory)) {
-                const manifest = JSON.parse(readFileSync(join(root, manifestPath), 'utf8'));
-                violations.push(...findManifestViolations(manifest, manifestPath));
-            }
-        } catch (error) {
-            if (error?.code !== 'ENOENT') throw error;
+        for (const manifestPath of collectPackageJsonPaths(root, directory)) {
+            const manifest = JSON.parse(readFileSync(join(root, manifestPath), 'utf8'));
+            violations.push(...findManifestViolations(manifest, manifestPath));
         }
     }
+
     violations.push(...findLockfileViolations(readFileSync(join(root, 'yarn.lock'), 'utf8')));
+
     return violations;
 };
 

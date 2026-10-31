@@ -12,6 +12,12 @@ directory.
 All the 3rd party dependencies related to a network should be defined inside that network's directory. Moreover, currently they're
 defined only inside general, no-suffix packages, e.g. `network-cardano` (previously coins packages) and dynamically exported.
 
+The Cardano package pins `@fivebinaries/coin-selection` to an immutable commit in the Yoroi Classic-owned
+[`yoroi-classic/coin-selection`](https://github.com/yoroi-classic/coin-selection) repository. The published `3.0.0` package
+still depends on EMURGO CSL; the pinned fork commit contains the CML-based implementation and Git-install build artifacts
+([coin-selection#11](https://github.com/yoroi-classic/coin-selection/pull/11)). Keep the commit pin and the Cardano CSL guard
+until a CML-based registry release is available.
+
 Example:
 
 ```

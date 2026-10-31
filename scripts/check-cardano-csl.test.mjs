@@ -1,14 +1,28 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import test from 'node:test';
 
 import {
     findCardanoCslViolations,
     findLockfileViolations,
     findManifestViolations,
 } from './check-cardano-csl.mjs';
+
+const CARDANO_ROOTS = [
+    'networks/cardano',
+    'packages/connect',
+    'packages/connect-web',
+    'packages/connect-mobile',
+    'packages/connect-webextension',
+];
+
+const createWorkspaceRoots = root => {
+    for (const directory of CARDANO_ROOTS) {
+        mkdirSync(join(root, directory), { recursive: true });
+    }
+};
 
 test('rejects direct CSL dependencies in package manifests', () => {
     assert.deepEqual(
@@ -22,12 +36,73 @@ test('rejects direct CSL dependencies in package manifests', () => {
     );
 });
 
+test('rejects CSL package variants in package manifests', () => {
+    assert.deepEqual(
+        findManifestViolations(
+            {
+                dependencies: {
+                    '@emurgo/cardano-serialization-lib-asmjs': '14.1.2',
+                    '@emurgo/cardano-serialization-lib-browser-gc': '14.1.2',
+                },
+            },
+            'packages/connect-mobile/package.json',
+        ),
+        [
+            'packages/connect-mobile/package.json: dependencies contains @emurgo/cardano-serialization-lib-asmjs',
+            'packages/connect-mobile/package.json: dependencies contains @emurgo/cardano-serialization-lib-browser-gc',
+        ],
+    );
+});
+
+test('rejects npm aliases to CSL packages in package manifests', () => {
+    assert.deepEqual(
+        findManifestViolations(
+            { dependencies: { csl: 'npm:@emurgo/cardano-serialization-lib-browser@14.1.2' } },
+            'networks/cardano/example/package.json',
+        ),
+        [
+            'networks/cardano/example/package.json: dependencies contains csl aliasing npm:@emurgo/cardano-serialization-lib-browser@14.1.2',
+        ],
+    );
+});
+
 test('rejects CSL entries in the lockfile', () => {
     assert.deepEqual(
         findLockfileViolations(
             '"@emurgo/cardano-serialization-lib-nodejs@npm:14.1.2":\n  version: 14.1.2\n',
         ),
         ['yarn.lock: forbidden CSL entry "@emurgo/cardano-serialization-lib-nodejs@npm:14.1.2":'],
+    );
+});
+
+test('rejects CSL package variants in the lockfile', () => {
+    assert.deepEqual(
+        findLockfileViolations(
+            '"@emurgo/cardano-serialization-lib-nodejs-gc@npm:14.1.2":\n  version: 14.1.2\n',
+        ),
+        [
+            'yarn.lock: forbidden CSL entry "@emurgo/cardano-serialization-lib-nodejs-gc@npm:14.1.2":',
+        ],
+    );
+});
+
+test('rejects patched CSL lockfile descriptors', () => {
+    assert.deepEqual(
+        findLockfileViolations(
+            '"@emurgo/cardano-serialization-lib-browser@patch:@emurgo/cardano-serialization-lib-browser@npm%3A14.1.2#./patches/csl.patch":\n',
+        ),
+        [
+            'yarn.lock: forbidden CSL entry "@emurgo/cardano-serialization-lib-browser@patch:@emurgo/cardano-serialization-lib-browser@npm%3A14.1.2#./patches/csl.patch":',
+        ],
+    );
+});
+
+test('rejects npm alias descriptors targeting CSL packages', () => {
+    assert.deepEqual(
+        findLockfileViolations('"csl@npm:@emurgo/cardano-serialization-lib-browser@14.1.2":\n'),
+        [
+            'yarn.lock: forbidden CSL entry "csl@npm:@emurgo/cardano-serialization-lib-browser@14.1.2":',
+        ],
     );
 });
 
@@ -49,6 +124,7 @@ test('scans Cardano package trees and the root lockfile', () => {
     const root = mkdtempSync(join(tmpdir(), 'cardano-csl-guard-'));
     try {
         const packageDirectory = join(root, 'networks/cardano/example');
+        createWorkspaceRoots(root);
         mkdirSync(packageDirectory, { recursive: true });
         writeFileSync(
             join(packageDirectory, 'package.json'),
@@ -65,6 +141,17 @@ test('scans Cardano package trees and the root lockfile', () => {
             'networks/cardano/example/package.json: devDependencies contains @emurgo/cardano-serialization-lib-nodejs',
             'yarn.lock: forbidden CSL entry "@emurgo/cardano-serialization-lib-browser@npm:14.1.2":',
         ]);
+    } finally {
+        rmSync(root, { recursive: true, force: true });
+    }
+});
+
+test('fails when a configured package root is missing', () => {
+    const root = mkdtempSync(join(tmpdir(), 'cardano-csl-missing-root-'));
+    try {
+        writeFileSync(join(root, 'yarn.lock'), '');
+
+        assert.throws(() => findCardanoCslViolations(root), { code: 'ENOENT' });
     } finally {
         rmSync(root, { recursive: true, force: true });
     }
