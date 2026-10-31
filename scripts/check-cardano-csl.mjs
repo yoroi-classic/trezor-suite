@@ -61,9 +61,7 @@ export const findLockfileViolations = lockfile =>
             return descriptor
                 .split(',')
                 .some(entry =>
-                    /@emurgo\/cardano-serialization-lib-(?:browser|nodejs)(?=@)/.test(
-                        entry.trim(),
-                    ),
+                    /@emurgo\/cardano-serialization-lib-(?:browser|nodejs)(?=@)/.test(entry.trim()),
                 );
         })
         .map(line => `yarn.lock: forbidden CSL entry ${line.trim()}`);

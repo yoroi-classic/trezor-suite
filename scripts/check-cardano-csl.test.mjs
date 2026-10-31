@@ -70,9 +70,7 @@ test('rejects patched CSL lockfile descriptors', () => {
 
 test('rejects npm alias descriptors targeting CSL packages', () => {
     assert.deepEqual(
-        findLockfileViolations(
-            '"csl@npm:@emurgo/cardano-serialization-lib-browser@14.1.2":\n',
-        ),
+        findLockfileViolations('"csl@npm:@emurgo/cardano-serialization-lib-browser@14.1.2":\n'),
         [
             'yarn.lock: forbidden CSL entry "csl@npm:@emurgo/cardano-serialization-lib-browser@14.1.2":',
         ],
