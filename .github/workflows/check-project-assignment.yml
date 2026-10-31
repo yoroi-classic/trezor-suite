@@ -12,13 +12,21 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
 jobs:
   check-project-or-issue:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    env:
+      TREZOR_BOT_APP_ID: ${{ secrets.TREZOR_BOT_APP_ID }}
     steps:
       - name: Generate GitHub App token
         id: trezor-bot-token
+        if: env.TREZOR_BOT_APP_ID != ''
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
           client-id: ${{ secrets.TREZOR_BOT_APP_ID }}
@@ -28,7 +36,11 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
       - name: Check if PR is assigned to a project (with required fields) or an issue
         env:
-          GITHUB_TOKEN: ${{ steps.trezor-bot-token.outputs.token }}
+          # The read-only check can use the workflow token in forks where the
+          # repository's GitHub App secrets are unavailable. Linked issues and
+          # the no-project label are checked before project data is queried.
+          GITHUB_TOKEN: ${{ steps.trezor-bot-token.outputs.token || secrets.GITHUB_TOKEN }}
+          HAS_PROJECT_ACCESS_TOKEN: ${{ steps.trezor-bot-token.outputs.token != '' }}
         run: |
           # Fetch PR labels
           PR_LABELS=$(gh pr view ${{ github.event.pull_request.number }} --json labels --jq '.labels[].name')
@@ -56,6 +68,11 @@ jobs:
           if [ "$LINKED_ISSUES" -gt 0 ]; then
             echo "Pass: The PR is linked to $LINKED_ISSUES issue(s)."
             exit 0
+          fi
+
+          if [ "$HAS_PROJECT_ACCESS_TOKEN" != "true" ]; then
+            echo "Error: Link this PR to an issue or add the 'no-project' label; project checks require the repository GitHub App token."
+            exit 1
           fi
 
           # Project fields that must be filled in once a PR is assigned to the Suite project
