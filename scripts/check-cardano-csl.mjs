@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const DEPENDENCY_FIELDS = [
@@ -27,7 +27,7 @@ const collectPackageJsonPaths = (root, directory) => {
                 paths.push(...collectPackageJsonPaths(root, entryPath));
             }
         } else if (entry.name === 'package.json') {
-            paths.push(relative(root, entryPath));
+            paths.push(relative(root, entryPath).split(sep).join('/'));
         }
     }
     return paths;
@@ -43,27 +43,25 @@ export const findManifestViolations = (manifest, manifestPath) =>
 export const findLockfileViolations = lockfile =>
     lockfile
         .split('\n')
-        .filter(line =>
-            CSL_PACKAGE_PATTERN.test(
-                line
-                    .trim()
-                    .replace(/^"|":$/g, '')
-                    .split('@npm:')[0],
-            ),
-        )
+        .filter(line => {
+            const descriptor = line.trim().replace(/^"|":$/g, '');
+            return descriptor
+                .split(',')
+                .some(entry =>
+                    /^@emurgo\/cardano-serialization-lib-(?:browser|nodejs)@/.test(
+                        entry.trim(),
+                    ),
+                );
+        })
         .map(line => `yarn.lock: forbidden CSL entry ${line.trim()}`);
 
 export const findCardanoCslViolations = root => {
     const violations = [];
     for (const relativeRoot of CARDANO_ROOTS) {
         const directory = join(root, relativeRoot);
-        try {
-            for (const manifestPath of collectPackageJsonPaths(root, directory)) {
-                const manifest = JSON.parse(readFileSync(join(root, manifestPath), 'utf8'));
-                violations.push(...findManifestViolations(manifest, manifestPath));
-            }
-        } catch (error) {
-            if (error?.code !== 'ENOENT') throw error;
+        for (const manifestPath of collectPackageJsonPaths(root, directory)) {
+            const manifest = JSON.parse(readFileSync(join(root, manifestPath), 'utf8'));
+            violations.push(...findManifestViolations(manifest, manifestPath));
         }
     }
     violations.push(...findLockfileViolations(readFileSync(join(root, 'yarn.lock'), 'utf8')));
