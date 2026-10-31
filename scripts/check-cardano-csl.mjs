@@ -30,6 +30,7 @@ const collectPackageJsonPaths = (root, directory) => {
             paths.push(relative(root, entryPath).split(sep).join('/'));
         }
     }
+
     return paths;
 };
 
@@ -45,6 +46,7 @@ export const findLockfileViolations = lockfile =>
         .split('\n')
         .filter(line => {
             const descriptor = line.trim().replace(/^"|":$/g, '');
+
             return descriptor
                 .split(',')
                 .some(entry =>
@@ -64,7 +66,9 @@ export const findCardanoCslViolations = root => {
             violations.push(...findManifestViolations(manifest, manifestPath));
         }
     }
+
     violations.push(...findLockfileViolations(readFileSync(join(root, 'yarn.lock'), 'utf8')));
+
     return violations;
 };
 
