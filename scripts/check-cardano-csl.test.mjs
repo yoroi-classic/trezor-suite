@@ -36,6 +36,24 @@ test('rejects direct CSL dependencies in package manifests', () => {
     );
 });
 
+test('rejects CSL package variants in package manifests', () => {
+    assert.deepEqual(
+        findManifestViolations(
+            {
+                dependencies: {
+                    '@emurgo/cardano-serialization-lib-asmjs': '14.1.2',
+                    '@emurgo/cardano-serialization-lib-browser-gc': '14.1.2',
+                },
+            },
+            'packages/connect-mobile/package.json',
+        ),
+        [
+            'packages/connect-mobile/package.json: dependencies contains @emurgo/cardano-serialization-lib-asmjs',
+            'packages/connect-mobile/package.json: dependencies contains @emurgo/cardano-serialization-lib-browser-gc',
+        ],
+    );
+});
+
 test('rejects npm aliases to CSL packages in package manifests', () => {
     assert.deepEqual(
         findManifestViolations(
@@ -54,6 +72,17 @@ test('rejects CSL entries in the lockfile', () => {
             '"@emurgo/cardano-serialization-lib-nodejs@npm:14.1.2":\n  version: 14.1.2\n',
         ),
         ['yarn.lock: forbidden CSL entry "@emurgo/cardano-serialization-lib-nodejs@npm:14.1.2":'],
+    );
+});
+
+test('rejects CSL package variants in the lockfile', () => {
+    assert.deepEqual(
+        findLockfileViolations(
+            '"@emurgo/cardano-serialization-lib-nodejs-gc@npm:14.1.2":\n  version: 14.1.2\n',
+        ),
+        [
+            'yarn.lock: forbidden CSL entry "@emurgo/cardano-serialization-lib-nodejs-gc@npm:14.1.2":',
+        ],
     );
 });
 

@@ -8,7 +8,8 @@ const DEPENDENCY_FIELDS = [
     'optionalDependencies',
     'peerDependencies',
 ];
-const CSL_PACKAGE_PATTERN = /^@emurgo\/cardano-serialization-lib-(?:browser|nodejs)$/;
+const CSL_PACKAGE_PATTERN = /^@emurgo\/cardano-serialization-lib-[a-z0-9-]+$/;
+const CSL_PACKAGE_REFERENCE_PATTERN = /@emurgo\/cardano-serialization-lib-[a-z0-9-]+(?=@)/;
 const CARDANO_ROOTS = [
     'networks/cardano',
     'packages/connect',
@@ -41,9 +42,7 @@ export const findManifestViolations = (manifest, manifestPath) =>
                 ([dependency, specifier]) =>
                     CSL_PACKAGE_PATTERN.test(dependency) ||
                     (typeof specifier === 'string' &&
-                        /@emurgo\/cardano-serialization-lib-(?:browser|nodejs)(?=@)/.test(
-                            specifier,
-                        )),
+                        CSL_PACKAGE_REFERENCE_PATTERN.test(specifier)),
             )
             .map(([dependency, specifier]) =>
                 CSL_PACKAGE_PATTERN.test(dependency)
@@ -60,9 +59,7 @@ export const findLockfileViolations = lockfile =>
 
             return descriptor
                 .split(',')
-                .some(entry =>
-                    /@emurgo\/cardano-serialization-lib-(?:browser|nodejs)(?=@)/.test(entry.trim()),
-                );
+                .some(entry => CSL_PACKAGE_REFERENCE_PATTERN.test(entry.trim()));
         })
         .map(line => `yarn.lock: forbidden CSL entry ${line.trim()}`);
 
